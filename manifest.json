@@ -1,0 +1,22 @@
+{
+  "manifest_version": 3,
+  "name": "EveryLawyer",
+  "version": "1.0",
+  "description": "Scan any page to extract lawyer contact leads and manage them from the sidebar.",
+  "background": {
+    "service_worker": "service-worker.js"
+  },
+  "action": {
+    "default_title": "Open EveryLawyer"
+  },
+  "permissions": [
+    "sidePanel",
+    "activeTab",
+    "scripting",
+    "tabs",
+    "storage"
+  ],
+  "host_permissions": [
+    "<all_urls>"
+  ]
+}

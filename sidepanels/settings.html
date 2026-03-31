@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+
+<head>
+    <meta charset="utf-8">
+    <title>EveryLawyer Settings</title>
+    <link rel="stylesheet" href="../css/pico.min.css">
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            margin: 0;
+        }
+
+        main {
+            flex: 1;
+        }
+    </style>
+</head>
+
+<body>
+    <header class="container">
+
+    </header>
+
+    <main class="container" style="padding-top: 2rem;">
+        <article>
+            <header>API Configuration</header>
+            <form id="settings-form">
+                <fieldset>
+                    <label>
+                        OpenRouter API Key
+                        <input type="password" id="api-key" name="api-key" placeholder="sk-or-v1-..." autocomplete="off">
+                        <small>Your key is stored securely in your local browser sync storage and is never shared.</small>
+                    </label>
+                    <label>
+                        Google Apps Script Webhook URL
+                        <input type="url" id="app-script" name="app-script" placeholder="https://script.google.com/macros/s/.../exec" autocomplete="off">
+                        <small>The active deployment URL that receives your leads for your Google Sheet.</small>
+                    </label>
+                </fieldset>
+                <input type="submit" id="save-btn" value="Save Settings">
+                <p id="settings-msg" style="color: var(--pico-ins-color); margin-top: 1rem; display: none;">Settings saved securely.</p>
+            </form>
+        </article>
+    </main>
+
+    <footer>
+        <div class="container-fluid" style="display: flex; justify-content: space-between;">
+            <p>EveryLawyer v0.1</p>
+            <a href="main.html">Back</a>
+        </div>
+    </footer>
+
+    <script src="settings.js"></script>
+</body>
+
+</html>

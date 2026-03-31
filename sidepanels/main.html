@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+
+<head>
+  <meta charset="utf-8">
+  <title>EveryLawyer Dashboard</title>
+  <link rel="stylesheet" href="../css/pico.min.css">
+  <style>
+    body {
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+      margin: 0;
+    }
+
+    main {
+      flex: 1;
+    }
+  </style>
+</head>
+
+<body>
+  <header class="container">
+    <article>
+      <header>
+        <button id="scan-btn">Scan Page</button>
+      </header>
+      <p id="status-msg"></p>
+      <details>
+        <summary>View Raw Extracted Data</summary>
+        <div id="code-container"></div>
+      </details>
+
+    </article>
+  </header>
+
+  <main class="container">
+    <article id="leads-wrapper" style="display: none;">
+      <header>Leads</header>
+      <div id="leads-container"></div>
+      <footer>
+        <div role="group">
+          <input type="button" id="send-all-btn" value="Send All">
+          <input type="button" class="secondary" id="reset-all-btn" value="Reset">
+        </div>
+      </footer>
+    </article>
+  </main>
+
+  <footer>
+    <div class="container-fluid" style="display: flex; justify-content: space-between;">
+      <p>EveryLawyer v0.1</p>
+      <a href="settings.html">Settings</a>
+    </div>
+  </footer>
+
+  <script src="main.js"></script>
+</body>
+
+</html>
