@@ -1,0 +1,97 @@
+import { getSettings } from './storage.js';
+
+export async function fetchVcfText(vcfUrl) {
+  try {
+    const res = await fetch(vcfUrl);
+    if (!res.ok) return null;
+    return await res.text();
+  } catch (e) {
+    console.warn("Failed to fetch vcard:", vcfUrl);
+    return null;
+  }
+}
+
+export async function extractContactDetails(markdownText, url) {
+  const settings = await getSettings();
+  if (!settings.openRouterApiKey) {
+    throw new Error("Missing OpenRouter API Key. Please click 'Settings' to add your key.");
+  }
+
+  const prompt = `
+You are an expert data extractor. Extract lawyer contact details from the following webpage markdown text.
+Return the result as a JSON array of objects, where each object has these exact fields:
+- FirmName
+- LawyerName
+- Title
+- Phone
+- Mail
+- Practice Area
+- Country
+- City
+- Url (use ${url} if not found in text)
+
+IMPORTANT: The "Practice Area" and "Title" fields MUST be translated into English, regardless of the original website language.
+If you can't find a field, leave it as an empty string "". Only return the raw JSON array, without markdown formatting or code blocks. Do not add any conversational text.
+
+Webpage Markdown:
+${markdownText.substring(0, 100000)}
+`;
+
+  const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      "Authorization": `Bearer ${settings.openRouterApiKey}`,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      "model": "openai/gpt-4o-mini",
+      "messages": [
+        { "role": "user", "content": prompt }
+      ]
+    })
+  });
+
+  if (!res.ok) {
+    const errText = await res.text();
+    throw new Error(`AI API Error: ${res.status} - ${errText}`);
+  }
+
+  const data = await res.json();
+  let content = data.choices[0].message.content.trim();
+
+  // Clean up potential markdown formatting
+  if (content.startsWith('\`\`\`json')) {
+    content = content.replace(/^\`\`\`json\n/, '').replace(/\n\`\`\`$/, '');
+  } else if (content.startsWith('\`\`\`')) {
+    content = content.replace(/^\`\`\`\n/, '').replace(/\n\`\`\`$/, '');
+  }
+
+  try {
+    return JSON.parse(content);
+  } catch (e) {
+    console.error("Failed to parse JSON:", content);
+    throw new Error("AI returned invalid JSON.");
+  }
+}
+
+export async function sendLeadToWebhook(formData) {
+  const settings = await getSettings();
+  if (!settings.appScriptUrl) {
+    throw new Error("Missing Google Apps Script Webhook. Please add it in Settings.");
+  }
+
+  // Google Sheets evaluates '+' as a formula. Prefix phone numbers with a single quote.
+  const tel = formData.get('tel');
+  if (tel && tel.trim().startsWith('+')) {
+    formData.set('tel', "'" + tel.trim());
+  }
+
+  await fetch(settings.appScriptUrl, {
+    method: 'POST',
+    mode: 'no-cors', // Bypass CORS restrictions
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded'
+    },
+    body: new URLSearchParams(formData).toString()
+  });
+}

@@ -8,7 +8,7 @@
     const clone = document.body.cloneNode(true);
     
     // 3. Remove non-content elements to clean up the HTML before Markdown conversion
-    const elementsToRemove = clone.querySelectorAll('script, style, noscript, svg, canvas, iframe');
+    const elementsToRemove = clone.querySelectorAll('script, style, noscript, svg, canvas, iframe, picture, video, audio, source, track');
     elementsToRemove.forEach(el => el.remove());
 
     // 4. Convert HTML direct to Markdown using Turndown

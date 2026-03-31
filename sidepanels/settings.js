@@ -1,3 +1,5 @@
+import { getSettings, saveSettings } from './storage.js';
+
 document.addEventListener('DOMContentLoaded', async () => {
   const apiKeyInput = document.getElementById('api-key');
   const appScriptInput = document.getElementById('app-script');
@@ -6,7 +8,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   const saveBtn = document.getElementById('save-btn');
 
   // Load existing key
-  const data = await chrome.storage.sync.get(['openRouterApiKey', 'appScriptUrl']);
+  const data = await getSettings();
   if (data.openRouterApiKey) {
     apiKeyInput.value = data.openRouterApiKey;
   }
@@ -22,10 +24,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const newKey = apiKeyInput.value.trim();
     const newScript = appScriptInput.value.trim();
     
-    await chrome.storage.sync.set({ 
-      openRouterApiKey: newKey,
-      appScriptUrl: newScript
-    });
+    await saveSettings(newKey, newScript);
     
     saveBtn.value = 'Save Settings';
     saveBtn.disabled = false;

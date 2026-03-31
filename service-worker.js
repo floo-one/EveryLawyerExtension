@@ -35,7 +35,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   if (message.type !== 'SCAN_PAGE') return false;
 
   chrome.scripting
-    .executeScript({ target: { tabId: message.tabId }, files: ['libs/readability.js', 'libs/turndown.js', 'content.js'] })
+    .executeScript({ target: { tabId: message.tabId }, files: ['libs/turndown.js', 'content.js'] })
     .then((results) => {
       const data = results?.[0]?.result;
       sendResponse({ data: data });
