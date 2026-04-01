@@ -17,13 +17,18 @@
       flex: 1;
     }
   </style>
+  <script src="../libs/turndown.js"></script>
 </head>
 
 <body>
   <header class="container">
     <article>
       <header>
-        <button id="scan-btn">Scan Page</button>
+        <div class="grid">
+          <button id="scan-btn">Scan Page</button>
+          <button id="deep-scan-btn" class="secondary">Deep Scan</button>
+          <button id="stop-scan-btn" class="contrast" style="display: none;">Stop Scan</button>
+        </div>
       </header>
       <p id="status-msg"></p>
       <details>

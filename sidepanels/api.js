@@ -95,3 +95,61 @@ export async function sendLeadToWebhook(formData) {
     body: new URLSearchParams(formData).toString()
   });
 }
+
+export async function findProfileLinks(linksArray, url) {
+  const settings = await getSettings();
+  if (!settings.openRouterApiKey) {
+    throw new Error("Missing OpenRouter API Key. Please click 'Settings' to add your key.");
+  }
+
+  const prompt = `
+You are helping an automated scraper navigate a law firm's team directory page located at: ${url}
+
+Here is a list of links found on that page, provided as JSON:
+${JSON.stringify(linksArray, null, 2)}
+
+Your task is to identify which of those URLs specifically point to individual lawyer/attorney profile pages.
+Exclude generic pages (like 'Contact', 'About', 'Careers', 'Practice Areas') and any other non-profile links.
+Include any link that seems to belong to a specific person's profile on the team.
+
+Return ONLY a JSON array of absolute URL strings. Do not include any other markdown formatting like \`\`\`json.
+Example output: ["https://www.firma.ch/team/john-doe", "https://www.firma.ch/team/jane-smith"]
+If no profile pages are found, return exactly [].
+`;
+
+  const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      "Authorization": `Bearer ${settings.openRouterApiKey}`,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      "model": "openai/gpt-4o-mini",
+      "messages": [
+        { "role": "user", "content": prompt }
+      ]
+    })
+  });
+
+  if (!res.ok) {
+    const errText = await res.text();
+    throw new Error(`AI API Error: ${res.status} - ${errText}`);
+  }
+
+  const data = await res.json();
+  let content = data.choices[0].message.content.trim();
+
+  // Clean up potential markdown formatting
+  if (content.startsWith('\`\`\`json')) {
+    content = content.replace(/^\`\`\`json\n/, '').replace(/\n\`\`\`$/, '');
+  } else if (content.startsWith('\`\`\`')) {
+    content = content.replace(/^\`\`\`\n/, '').replace(/\n\`\`\`$/, '');
+  }
+
+  try {
+    return JSON.parse(content);
+  } catch (e) {
+    console.error("Failed to parse JSON for links:", content);
+    throw new Error("AI returned invalid JSON for link extraction.");
+  }
+}
