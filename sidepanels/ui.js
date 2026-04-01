@@ -22,7 +22,10 @@ export function renderLeads(leads, leadsContainer) {
     const details = document.createElement('details');
     const lawyerName = escapeHTML(lead.LawyerName || 'Unknown Lawyer');
 
-    details.innerHTML = `<summary role="button" class="outline contrast">${lawyerName}</summary>
+    details.innerHTML = `<summary role="button" class="outline contrast" style="display: flex; align-items: center; gap: 0.5rem;">
+        <input type="checkbox" class="lead-checkbox" style="margin: 0; width: auto; height: auto;" onclick="event.stopPropagation()" checked>
+        ${lawyerName}
+      </summary>
       <form class="lead-form" style="margin-top: 1rem;">
         <fieldset>
           <label>Lawyer Name
@@ -59,8 +62,9 @@ export function renderLeads(leads, leadsContainer) {
       </form>`;
 
     const form = details.querySelector('form');
-    form.addEventListener('submit', async (e) => {
-      e.preventDefault();
+    
+    // Attach the async function to the form so we can call it directly and await it
+    form.submitLead = async () => {
       const submitBtn = form.querySelector('input[type="submit"]');
       const originalValue = submitBtn.value;
       
@@ -86,6 +90,11 @@ export function renderLeads(leads, leadsContainer) {
           submitBtn.classList.remove('secondary', 'contrast');
         }, 2500);
       }
+    };
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      await form.submitLead();
     });
 
     leadsContainer.appendChild(details);

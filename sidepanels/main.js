@@ -243,26 +243,44 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // Bind Global Send/Reset Actions
   const sendAllBtn = document.getElementById('send-all-btn');
-  sendAllBtn?.addEventListener('click', () => {
+  sendAllBtn?.addEventListener('click', async () => {
     const originalValue = sendAllBtn.value;
-    sendAllBtn.value = 'Sending All...';
+    sendAllBtn.value = 'Sending Leads...';
     sendAllBtn.disabled = true;
 
-    // Trigger submit on every individual lead form
-    document.querySelectorAll('.lead-form').forEach(form => {
-      form.dispatchEvent(new Event('submit'));
-    });
+    // Trigger submit sequentially for selected forms to avoid Google Sheets race conditions
+    const forms = Array.from(document.querySelectorAll('.lead-form'));
+    
+    for (let i = 0; i < forms.length; i++) {
+      const form = forms[i];
+      // Check if the lead is selected via the checkbox
+      const cb = form.closest('details').querySelector('input[type="checkbox"]');
+      if (cb && !cb.checked) {
+        continue; // Skip unselected leads
+      }
+
+      try {
+        if (form.submitLead) {
+          await form.submitLead();
+        } else {
+          // Fallback if submitLead isn't attached
+          form.dispatchEvent(new Event('submit'));
+        }
+        // 600ms delay between requests to ensure Google Apps Script handles them safely
+        await new Promise(r => setTimeout(r, 600));
+      } catch (e) {
+        console.error('Error in bulk send:', e);
+      }
+    }
 
     // Provide visual success feedback on the global button
+    sendAllBtn.value = 'All Sent!';
+    sendAllBtn.classList.add('contrast');
     setTimeout(() => {
-      sendAllBtn.value = 'All Sent!';
-      sendAllBtn.classList.add('contrast');
-      setTimeout(() => {
-        sendAllBtn.value = originalValue;
-        sendAllBtn.disabled = false;
-        sendAllBtn.classList.remove('contrast');
-      }, 2500);
-    }, 500);
+      sendAllBtn.value = originalValue;
+      sendAllBtn.disabled = false;
+      sendAllBtn.classList.remove('contrast');
+    }, 2500);
   });
 
   document.getElementById('reset-all-btn')?.addEventListener('click', async () => {
