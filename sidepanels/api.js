@@ -96,6 +96,34 @@ export async function sendLeadToWebhook(formData) {
   });
 }
 
+export async function sendBulkLeadsToWebhook(leadsArray) {
+  const settings = await getSettings();
+  if (!settings.appScriptUrl) {
+    throw new Error("Missing Google Apps Script Webhook. Please add it in Settings.");
+  }
+
+  // Handle Google Sheet "+" formula evaluation
+  const processedLeads = leadsArray.map(lead => {
+    let newLead = { ...lead };
+    if (newLead.tel && newLead.tel.trim().startsWith('+')) {
+      newLead.tel = "'" + newLead.tel.trim();
+    }
+    return newLead;
+  });
+
+  const payload = new URLSearchParams();
+  payload.append('bulk_data', JSON.stringify(processedLeads));
+
+  await fetch(settings.appScriptUrl, {
+    method: 'POST',
+    mode: 'no-cors',
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded'
+    },
+    body: payload.toString()
+  });
+}
+
 export async function findProfileLinks(linksArray, url) {
   const settings = await getSettings();
   if (!settings.openRouterApiKey) {

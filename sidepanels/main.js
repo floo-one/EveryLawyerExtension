@@ -1,5 +1,5 @@
 import { getLocalData, saveScrapedData, saveLeads } from './storage.js';
-import { extractContactDetails, fetchVcfText, findProfileLinks } from './api.js';
+import { extractContactDetails, fetchVcfText, findProfileLinks, sendBulkLeadsToWebhook } from './api.js';
 import { renderLeads, renderCode } from './ui.js';
 
 document.addEventListener('DOMContentLoaded', async () => {
@@ -248,8 +248,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     sendAllBtn.value = 'Sending Leads...';
     sendAllBtn.disabled = true;
 
-    // Trigger submit sequentially for selected forms to avoid Google Sheets race conditions
+    // Gather all selected leads for a bulk submission
     const forms = Array.from(document.querySelectorAll('.lead-form'));
+    const leadsToSubmit = [];
+    const uiButtons = [];
     
     for (let i = 0; i < forms.length; i++) {
       const form = forms[i];
@@ -259,23 +261,52 @@ document.addEventListener('DOMContentLoaded', async () => {
         continue; // Skip unselected leads
       }
 
-      try {
-        if (form.submitLead) {
-          await form.submitLead();
-        } else {
-          // Fallback if submitLead isn't attached
-          form.dispatchEvent(new Event('submit'));
-        }
-        // 600ms delay between requests to ensure Google Apps Script handles them safely
-        await new Promise(r => setTimeout(r, 600));
-      } catch (e) {
-        console.error('Error in bulk send:', e);
+      const formData = new FormData(form);
+      leadsToSubmit.push(Object.fromEntries(formData.entries()));
+      
+      const submitBtn = form.querySelector('input[type="submit"]');
+      if (submitBtn) {
+        submitBtn.value = 'Sending...';
+        submitBtn.disabled = true;
+        submitBtn.classList.add('secondary');
+        uiButtons.push(submitBtn);
       }
     }
 
-    // Provide visual success feedback on the global button
-    sendAllBtn.value = 'All Sent!';
-    sendAllBtn.classList.add('contrast');
+    if (leadsToSubmit.length > 0) {
+      try {
+        await sendBulkLeadsToWebhook(leadsToSubmit);
+        
+        // Update all individual buttons to indicate success
+        uiButtons.forEach(btn => {
+          btn.value = 'Sent!';
+          btn.classList.remove('secondary');
+          btn.classList.add('contrast');
+          setTimeout(() => {
+            btn.value = 'Send this Lead'; // Reset to default text
+            btn.disabled = false;
+            btn.classList.remove('contrast');
+          }, 2500);
+        });
+
+        sendAllBtn.value = 'All Sent!';
+        sendAllBtn.classList.add('contrast');
+      } catch (err) {
+        console.error('Error in bulk send:', err);
+        uiButtons.forEach(btn => {
+          btn.value = 'Error!';
+          setTimeout(() => {
+            btn.value = 'Send this Lead';
+            btn.disabled = false;
+            btn.classList.remove('secondary', 'contrast');
+          }, 2500);
+        });
+        sendAllBtn.value = 'Error!';
+      }
+    } else {
+      sendAllBtn.value = 'None Selected';
+    }
+
     setTimeout(() => {
       sendAllBtn.value = originalValue;
       sendAllBtn.disabled = false;
